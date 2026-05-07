@@ -13,6 +13,8 @@
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[parakeet,dev]"   # runtime + optional engine + test deps
+# or, fully reproducible from the committed uv.lock:
+uv sync --extra parakeet --extra dev
 
 python -m auto_transcribe           # GUI watcher
 python -m auto_transcribe --once    # one-shot batch over input/

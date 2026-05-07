@@ -84,7 +84,23 @@ pip install --upgrade pip
 pip install -e ".[parakeet,dev]"
 ```
 
-Or, if you only ever plan to double-click the launchers, skip this — the `.command` files create the venv on first run automatically.
+### Reproducible install with `uv` (optional, recommended for CI)
+
+The repo ships a committed `uv.lock` so any developer or CI job gets the
+exact resolved dependency graph:
+
+```bash
+pipx install uv          # one-time
+uv sync --extra parakeet --extra dev
+.venv/bin/python -m auto_transcribe --help
+```
+
+`uv sync` is roughly 10x faster than `pip install -e` and bypasses Python
+resolver flakiness when third-party dependencies (mlx-whisper, parakeet-mlx)
+publish new releases. Bump the lockfile with `uv lock --upgrade`.
+
+Or, if you only ever plan to double-click the launchers, skip both — the
+`.command` files create the venv on first run automatically.
 
 ---
 
