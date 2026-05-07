@@ -1,0 +1,121 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install ffmpeg (required by integration tests)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install project (test dependencies only)
+        # Skip the heavy ML extras (mlx-whisper, parakeet-mlx) on Linux CI; the
+        # Linux runners cannot run MLX. Unit & integration tests stub the
+        # engine, so they never need it. The opt-in e2e suite runs locally on
+        # the Mac mini that owns this repo.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-deps -e .
+          python -m pip install \
+            "watchdog>=4" \
+            "pytest>=8" "pytest-timeout>=2.3" "pytest-cov>=5" \
+            "pytest-xdist>=3.5" "pytest-randomly>=3.15" \
+            "pytest-rerunfailures>=14" "coverage[toml]>=7.4"
+
+      - name: Show test environment
+        run: |
+          python -V
+          ffmpeg -version | head -1
+          python -m pytest --version
+
+      - name: Run pytest with coverage and timing
+        id: pytest
+        run: |
+          mkdir -p tests/_reports
+          # --durations and the --cov flags are configured in pyproject.toml.
+          # We pin -p no:randomly off here? No - keep randomization on. We
+          # capture the seed in the report filename for repro.
+          python -m pytest --maxfail=3
+
+      - name: Summarize slowest tests
+        if: always()
+        run: |
+          if [ -f tests/_reports/junit.xml ]; then
+            python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          tree = ET.parse("tests/_reports/junit.xml")
+          cases = []
+          for tc in tree.iter("testcase"):
+              t = float(tc.get("time", "0") or 0)
+              name = f"{tc.get('classname','')}::{tc.get('name','')}"
+              cases.append((t, name))
+          cases.sort(reverse=True)
+          print("\n## Slowest tests (top 10)")
+          for t, n in cases[:10]:
+              print(f"- {t:6.2f}s  {n}")
+
+          summary = Path(__import__("os").environ.get("GITHUB_STEP_SUMMARY", "/dev/stdout"))
+          with summary.open("a") as f:
+              f.write("\n## Test performance (top 10 slowest)\n\n")
+              f.write("| Duration | Test |\n|---:|---|\n")
+              for t, n in cases[:10]:
+                  f.write(f"| {t:.2f}s | `{n}` |\n")
+          PY
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            tests/_reports/htmlcov/
+
+      - name: Upload JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-py${{ matrix.python-version }}
+          path: tests/_reports/junit.xml
+
+      - name: Publish test summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: tests/_reports/junit.xml
+        continue-on-error: true

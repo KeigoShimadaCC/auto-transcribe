@@ -29,6 +29,12 @@ dist/
 tests/_reports/
 tests/_e2e_artifacts/
 
+# Coverage outputs
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -256,18 +256,42 @@ auto-transcribe/
 
 ## Tests
 
+The suite is split into three tiers:
+
+| Tier | Path | Marker | What runs | Speed |
+|---|---|---|---|---|
+| Unit | `tests/test_*.py` | (none) | Pure logic + small ffmpeg fixture; engine is faked | ~3 s |
+| Integration | `tests/integration/test_*.py` | `integration` | Real ffmpeg pipeline + watcher + queue + CLI; fake engine | ~30 s |
+| E2E | `tests/test_e2e.py` | `e2e` | Real MLX model on `ExampleData/`, opt-in | minutes |
+
 ```bash
-# Fast unit tests (use a synthetic 2-s tone fixture; no model download required)
+# Full default run (unit + integration), parallel across all cores,
+# random order, with coverage gate at 80% and JUnit/HTML reports:
 pytest
 
-# Full end-to-end sweep over ExampleData/ with the default model
+# Just the integration tier:
+pytest tests/integration -m integration
+
+# Full end-to-end sweep over ExampleData/ with the default model:
 RUN_E2E=1 pytest -m e2e
 
-# Override e2e model / language
+# Override e2e model / language:
 RUN_E2E=1 E2E_MODEL=mlx-community/whisper-tiny E2E_LANG=ja pytest -m e2e
 ```
 
-The unit suite uses an in-memory fake engine plus the real ffmpeg binary, so it exercises the full pipeline plumbing without downloading any ML model. The e2e suite uses the real engine and writes a per-file timing report to `tests/_reports/e2e_report.json` (gitignored).
+**Plugins in use** (declared in the `dev` extra):
+- `pytest-cov` — branch coverage with `--cov-fail-under=80`. Reports written to
+  `coverage.xml`, `tests/_reports/htmlcov/`.
+- `pytest-xdist` — parallel execution (`-n auto`).
+- `pytest-randomly` — randomised test order each run; the seed is printed at
+  the top of the output for reproduction.
+- `pytest-rerunfailures` — opt-in retries via `@pytest.mark.flaky(reruns=2)`.
+- `pytest-timeout` — per-test wall-clock limits.
+
+**Reports & CI:** `.github/workflows/tests.yml` runs the suite on every push/PR
+across Python 3.11 and 3.12, uploads `coverage.xml`, the HTML coverage report,
+and `tests/_reports/junit.xml` as artifacts, and posts the slowest 10 tests to
+the GitHub step summary so test-time regressions are visible.
 
 ---
 

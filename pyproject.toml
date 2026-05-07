@@ -20,6 +20,11 @@ parakeet = ["parakeet-mlx>=0.3.0"]
 dev = [
     "pytest>=8",
     "pytest-timeout>=2.3",
+    "pytest-cov>=5",
+    "pytest-xdist>=3.5",
+    "pytest-randomly>=3.15",
+    "pytest-rerunfailures>=14",
+    "coverage[toml]>=7.4",
 ]
 
 [project.scripts]
@@ -30,7 +35,52 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# -ra summarises rerun/skip/xfail; -n auto runs in parallel via pytest-xdist;
+# pytest-randomly randomises test order each run; --durations=10 surfaces the
+# slowest tests; coverage threshold is enforced through pytest-cov.
+addopts = """
+  -ra
+  -n auto
+  --durations=10
+  --cov=auto_transcribe
+  --cov-report=term-missing
+  --cov-report=xml:coverage.xml
+  --cov-report=html:tests/_reports/htmlcov
+  --cov-fail-under=80
+  --junitxml=tests/_reports/junit.xml
+  -p no:cacheprovider
+"""
 markers = [
     "e2e: end-to-end tests (slow; opt-in via RUN_E2E=1)",
+    "integration: integration tests exercising multiple modules together",
+    "flaky: tests with known transient failures; auto-retried via pytest-rerunfailures",
+]
+filterwarnings = [
+    "error::DeprecationWarning:auto_transcribe.*",
+]
+
+[tool.coverage.run]
+source = ["auto_transcribe"]
+branch = true
+parallel = true
+# ui_tk requires a Tk display server; the two ML engines need a 1.6 GB model
+# download to execute. Both are exercised by the opt-in e2e suite, not unit
+# tests. Excluding them keeps the coverage gate meaningful instead of bloated
+# with permanent zeros.
+omit = [
+    "*/auto_transcribe/__main__.py",
+    "*/auto_transcribe/ui_tk.py",
+    "*/auto_transcribe/engines/mlx_whisper.py",
+    "*/auto_transcribe/engines/parakeet.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]

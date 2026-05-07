@@ -33,10 +33,17 @@ RUN_E2E=1 pytest -m e2e             # full sweep over ExampleData/
 
 ## Testing Guidelines
 
-- Framework: `pytest` (config in `pyproject.toml`). Files: `tests/test_*.py`. Functions: `test_*`.
-- Unit tests must avoid network and ML model downloads — patch `pipeline.build_engine` with a fake (see `test_pipeline.py`).
-- New engines: add a unit test that constructs the engine and asserts `name` / `model`.
-- Mark long, real-model tests with `@pytest.mark.e2e` and gate behind `RUN_E2E=1`.
+- Framework: `pytest` (config in `pyproject.toml`). Three tiers, each with its own folder/marker:
+  - **Unit** — `tests/test_*.py`. Must avoid network and ML model downloads; patch `pipeline.build_engine` with a fake (see `tests/test_pipeline.py`).
+  - **Integration** — `tests/integration/test_*.py` with `@pytest.mark.integration`. Real ffmpeg + fake engine; exercises multiple modules together.
+  - **E2E** — `tests/test_e2e.py` with `@pytest.mark.e2e`, gated by `RUN_E2E=1`. Real model, real `ExampleData/`.
+- New engines: add a unit test that constructs the engine and asserts `name` / `model` (see `tests/test_factory.py`).
+- **Coverage gate**: 80%, enforced by `pytest --cov-fail-under=80`. The gate measures only the testable surface (`ui_tk.py` and the two ML engine adapters are excluded in `[tool.coverage.run] omit`). Adding new modules without tests will fail CI.
+- **Parallelism & isolation**: `pytest-xdist` (`-n auto`) runs the suite across all cores; `pytest-randomly` randomises order each run. Tests therefore must not rely on global state — use the `isolated_settings` fixture for any filesystem state, and pass `AUTO_TRANSCRIBE_SETTINGS` via `monkeypatch.setenv`.
+- **Flaky tests**: mark a known transient with `@pytest.mark.flaky(reruns=2, reruns_delay=1)` (provided by `pytest-rerunfailures`). Quarantine policy: any test that needs rerunning twice in a week must be either fixed or moved into a `skip` block with a TODO referencing an issue.
+- **Performance tracking**: `--durations=10` is on by default; CI uploads `tests/_reports/junit.xml` and `tests/_reports/htmlcov/` as artifacts and writes a "Slowest tests" table to the GitHub step summary on every run.
+
+Run the full suite locally with `pytest`. Run only the integration tier with `pytest tests/integration -m integration`. Run the e2e sweep with `RUN_E2E=1 pytest -m e2e`.
 
 ## Commit & Pull Request Guidelines
 
