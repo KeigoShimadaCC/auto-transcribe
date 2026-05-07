@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -29,7 +28,7 @@ class _FakeEngine:
 
 @pytest.fixture
 def patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pipeline, "build_engine", lambda model: _FakeEngine(model))
+    monkeypatch.setattr(pipeline, "build_engine", _FakeEngine)
 
 
 def test_is_supported(tmp_path: Path) -> None:
@@ -58,9 +57,7 @@ def test_transcribe_file_writes_outputs(
     assert "00:00:00,000 --> 00:00:01,000" in srt
 
 
-def test_state_dedup(
-    isolated_settings: Settings, fixtures_dir: Path, patch_engine: None
-) -> None:
+def test_state_dedup(isolated_settings: Settings, fixtures_dir: Path, patch_engine: None) -> None:
     src = Path(isolated_settings.input_dir) / "tone.wav"
     shutil.copy2(fixtures_dir / "tone.wav", src)
     pipeline.transcribe_file(src, isolated_settings)

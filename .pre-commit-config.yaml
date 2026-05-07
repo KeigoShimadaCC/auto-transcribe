@@ -1,0 +1,61 @@
+# Pre-commit hooks for auto-transcribe.
+#
+# Install once with:    pip install pre-commit && pre-commit install
+# Run on demand:        pre-commit run --all-files
+# Update pinned tools:  pre-commit autoupdate
+#
+# These hooks are duplicated in CI (.github/workflows/lint.yml) so failures
+# show up the same way locally and in PRs.
+
+minimum_pre_commit_version: "3.5.0"
+default_language_version:
+  python: python3
+
+repos:
+  # Generic hygiene: trailing whitespace, EOF newline, large files, secrets.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        # Block any addition above 500 KB of non-LFS content.
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+
+  # Ruff: lint + format. Identical config to CI; reads pyproject.toml.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+
+  # Mypy: strict type checking against src/.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        files: ^src/auto_transcribe/
+        additional_dependencies: []
+        args: ["--config-file=pyproject.toml"]
+
+  # Vulture: dead code detection.
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: v2.13
+    hooks:
+      - id: vulture
+
+  # Conventional Commits enforcement on commit messages (release-please needs them).
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: ["feat", "fix", "perf", "deps", "revert", "docs", "refactor", "test", "build", "ci", "chore"]

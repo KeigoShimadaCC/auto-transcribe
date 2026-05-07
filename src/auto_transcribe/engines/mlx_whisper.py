@@ -22,7 +22,7 @@ class MLXWhisperEngine:
         on_progress: ProgressCallback | None = None,
     ) -> TranscriptionResult:
         try:
-            import mlx_whisper  # type: ignore[import-not-found]
+            import mlx_whisper
         except ImportError as e:
             raise RuntimeError(
                 "mlx-whisper is not installed. Run `pip install mlx-whisper`."
@@ -31,7 +31,10 @@ class MLXWhisperEngine:
         if on_progress:
             on_progress(0.05, "Loading model")
 
-        kwargs: dict = {"path_or_hf_repo": self.model, "verbose": False}
+        kwargs: dict[str, object] = {
+            "path_or_hf_repo": self.model,
+            "verbose": False,
+        }
         if language and language != "auto":
             kwargs["language"] = language
 

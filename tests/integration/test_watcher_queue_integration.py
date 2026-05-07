@@ -58,7 +58,7 @@ def test_dropped_file_triggers_full_pipeline(
     q.start()
     watcher = FolderWatcher(
         isolated_settings,
-        on_new_file=lambda p: q.submit(p),
+        on_new_file=q.submit,
         poll_interval=0.15,
         stable_after=0.3,
     )
@@ -84,7 +84,7 @@ def test_three_files_dropped_in_burst_are_all_processed_serially(
     q.start()
     watcher = FolderWatcher(
         isolated_settings,
-        on_new_file=lambda p: q.submit(p),
+        on_new_file=q.submit,
         poll_interval=0.1,
         stable_after=0.25,
     )
@@ -122,7 +122,7 @@ def test_already_done_files_are_not_redispatched(
     q.start()
     watcher = FolderWatcher(
         isolated_settings,
-        on_new_file=lambda p: q.submit(p),
+        on_new_file=q.submit,
         poll_interval=0.1,
         stable_after=0.2,
     )

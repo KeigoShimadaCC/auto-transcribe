@@ -29,7 +29,7 @@ class _FakeEngine:
 
 @pytest.fixture(autouse=True)
 def patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pipeline, "build_engine", lambda model: _FakeEngine(model))
+    monkeypatch.setattr(pipeline, "build_engine", _FakeEngine)
 
 
 def _wait_for(predicate, timeout: float = 8.0) -> bool:
@@ -41,14 +41,12 @@ def _wait_for(predicate, timeout: float = 8.0) -> bool:
     return False
 
 
-def test_watcher_picks_up_new_file(
-    isolated_settings: Settings, fixtures_dir: Path
-) -> None:
+def test_watcher_picks_up_new_file(isolated_settings: Settings, fixtures_dir: Path) -> None:
     q = JobQueue(isolated_settings)
     q.start()
     watcher = FolderWatcher(
         isolated_settings,
-        on_new_file=lambda p: q.submit(p),
+        on_new_file=q.submit,
         poll_interval=0.2,
         stable_after=0.4,
     )
@@ -67,9 +65,7 @@ def test_watcher_picks_up_new_file(
         q.stop()
 
 
-def test_watcher_dedupes_already_done(
-    isolated_settings: Settings, fixtures_dir: Path
-) -> None:
+def test_watcher_dedupes_already_done(isolated_settings: Settings, fixtures_dir: Path) -> None:
     target = Path(isolated_settings.input_dir) / "tone.wav"
     shutil.copy2(fixtures_dir / "tone.wav", target)
     pipeline.transcribe_file(target, isolated_settings)
@@ -78,7 +74,7 @@ def test_watcher_dedupes_already_done(
     q.start()
     watcher = FolderWatcher(
         isolated_settings,
-        on_new_file=lambda p: q.submit(p),
+        on_new_file=q.submit,
         poll_interval=0.2,
         stable_after=0.3,
     )

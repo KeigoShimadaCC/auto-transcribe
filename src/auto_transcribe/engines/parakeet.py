@@ -22,7 +22,7 @@ class ParakeetEngine:
         on_progress: ProgressCallback | None = None,
     ) -> TranscriptionResult:
         try:
-            from parakeet_mlx import from_pretrained  # type: ignore[import-not-found]
+            from parakeet_mlx import from_pretrained
         except ImportError as e:
             raise RuntimeError(
                 "parakeet-mlx is not installed. Run `pip install parakeet-mlx`."
@@ -39,9 +39,7 @@ class ParakeetEngine:
         result = model.transcribe(str(wav_path))
 
         text = getattr(result, "text", None) or str(result)
-        raw_segments = getattr(result, "sentences", None) or getattr(
-            result, "segments", []
-        )
+        raw_segments = getattr(result, "sentences", None) or getattr(result, "segments", [])
         segments: list[Segment] = []
         for s in raw_segments or []:
             start = float(getattr(s, "start", 0.0) or 0.0)

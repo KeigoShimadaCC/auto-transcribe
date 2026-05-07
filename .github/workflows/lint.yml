@@ -1,0 +1,108 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dev tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-deps -e .
+          python -m pip install \
+            "watchdog>=4" \
+            "ruff>=0.6" "mypy>=1.10" "vulture>=2.11" \
+            "pytest>=8" "pytest-cov>=5" "pytest-xdist>=3.5" \
+            "pytest-randomly>=3.15" "pytest-rerunfailures>=14" "pytest-timeout>=2.3"
+
+      - name: Ruff lint (E/W/F/I/B/UP/SIM/C90/PL/PERF/RUF/FIX/TD)
+        run: ruff check src tests --output-format=github
+
+      - name: Ruff format check
+        run: ruff format --check src tests
+
+      - name: Mypy strict
+        run: mypy
+
+      - name: Vulture (dead code, min-confidence=80)
+        run: vulture
+
+      - name: TODO/FIXME hygiene scan
+        # Surface every TODO/FIXME for visibility but do not fail on them; ruff
+        # FIX/TD rules already enforce the format on new code.
+        if: always()
+        run: |
+          {
+            echo "## Outstanding TODO / FIXME / XXX markers"
+            echo
+            if rg --line-number --no-heading -e "(TODO|FIXME|XXX|HACK)" -g "src/**" -g "tests/**" -g "scripts/**"; then
+              :
+            else
+              echo "_None — repo is clean._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  duplication:
+    name: duplicate-code (jscpd)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run jscpd
+        # 5% threshold across src/ and tests/. Reports duplicates in markdown
+        # form into the run summary; fails the job if duplication exceeds 5%.
+        run: |
+          npx --yes jscpd@4 \
+            --pattern "src/**/*.py" \
+            --pattern "tests/**/*.py" \
+            --min-tokens 50 \
+            --min-lines 7 \
+            --threshold 5 \
+            --reporters "console,markdown" \
+            --output ./jscpd-report
+
+      - name: Publish duplication report
+        if: always()
+        run: |
+          if [ -f ./jscpd-report/jscpd-report.md ]; then
+            cat ./jscpd-report/jscpd-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload duplication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jscpd-report
+          path: ./jscpd-report

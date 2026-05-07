@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from auto_transcribe.config import ALL_MODELS, Settings
+
+ProgressFn = Callable[[float, str], None]
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -41,8 +44,8 @@ def _apply_overrides(settings: Settings, args: argparse.Namespace) -> Settings:
     return settings
 
 
-def _print_progress(prefix: str) -> "callable":
-    state = {"last": -1}
+def _print_progress(prefix: str) -> ProgressFn:
+    state: dict[str, int] = {"last": -1}
 
     def cb(fraction: float, status: str) -> None:
         pct = int(fraction * 100)
@@ -66,7 +69,7 @@ def _run_once(settings: Settings, files: list[Path] | None = None) -> int:
         t0 = time.time()
         try:
             result = transcribe_file(src, settings, on_progress=_print_progress(src.name))
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"   FAILED: {e}", file=sys.stderr)
             rc = 1
             continue
@@ -98,17 +101,16 @@ def _run_watch(settings: Settings, headless: bool) -> int:
             run_ui(settings)
             return 0
 
-    from auto_transcribe.queue import JobQueue
+    from auto_transcribe.queue import Job, JobQueue
     from auto_transcribe.watcher import FolderWatcher
 
+    def _log_job(j: Job) -> None:
+        print(f"[{j.status.value}] {j.source.name}: {int(j.progress * 100)}% {j.message}")
+
     q = JobQueue(settings)
-    q.add_listener(
-        lambda j: print(
-            f"[{j.status.value}] {j.source.name}: {int(j.progress * 100)}% {j.message}"
-        )
-    )
+    q.add_listener(_log_job)
     q.start()
-    w = FolderWatcher(settings, on_new_file=lambda p: q.submit(p))
+    w = FolderWatcher(settings, on_new_file=q.submit)
     w.start()
     print(f"Watching {settings.input_dir} ... Ctrl-C to stop.")
     try:

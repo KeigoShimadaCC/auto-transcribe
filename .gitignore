@@ -35,6 +35,9 @@ tests/_e2e_artifacts/
 coverage.xml
 htmlcov/
 
+# jscpd duplicate-code report
+jscpd-report/
+
 # OS
 .DS_Store
 Thumbs.db

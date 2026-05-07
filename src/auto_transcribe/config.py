@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -23,6 +23,7 @@ def settings_file() -> Path:
             str(Path.home() / ".auto-transcribe" / "settings.json"),
         )
     )
+
 
 WHISPER_MODELS = [
     "mlx-community/whisper-tiny",
@@ -54,7 +55,7 @@ class Settings:
         return "parakeet" if "parakeet" in self.model.lower() else "mlx-whisper"
 
     @classmethod
-    def load(cls) -> "Settings":
+    def load(cls) -> Settings:
         path = settings_file()
         if path.exists():
             try:

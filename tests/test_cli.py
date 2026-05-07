@@ -24,7 +24,7 @@ class _FakeEngine:
 
 @pytest.fixture(autouse=True)
 def patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pipeline, "build_engine", lambda model: _FakeEngine(model))
+    monkeypatch.setattr(pipeline, "build_engine", _FakeEngine)
 
 
 def test_cli_once_processes_pending(

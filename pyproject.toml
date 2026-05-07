@@ -25,6 +25,10 @@ dev = [
     "pytest-randomly>=3.15",
     "pytest-rerunfailures>=14",
     "coverage[toml]>=7.4",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "vulture>=2.11",
+    "pre-commit>=3.7",
 ]
 
 [project.scripts]
@@ -83,4 +87,141 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff: lint + format + complexity + large-file + TODO-format gate
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+extend-exclude = [
+    ".venv",
+    "build",
+    "dist",
+    "tests/_reports",
+    "tests/_e2e_artifacts",
+    "ExampleData",
+    "input",
+    "output",
+]
+
+[tool.ruff.lint]
+# Enable a curated, high-signal subset:
+#   E/W   -- pycodestyle errors & warnings
+#   F     -- pyflakes (unused imports/vars; dead-code at the symbol level)
+#   I     -- isort (import order)
+#   B     -- flake8-bugbear
+#   UP    -- pyupgrade
+#   SIM   -- flake8-simplify
+#   C90   -- mccabe complexity
+#   PL    -- pylint (refactor / convention / warning subsets)
+#   PERF  -- flake8-performance
+#   RUF   -- ruff-specific rules
+#   FIX   -- flake8-fixme: makes bare TODO/FIXME visible
+#   TD    -- flake8-todos: enforce TODO format
+select = [
+    "E", "W", "F", "I", "B", "UP", "SIM",
+    "C90", "PL", "PERF", "RUF", "FIX", "TD",
+]
+ignore = [
+    # Allow assert statements in tests
+    "S101",
+    # Allow magic numbers (transcription thresholds, frame rates, etc.)
+    "PLR2004",
+    # Allow long messages in raise statements
+    "TRY003",
+    # Don't require an issue link inside every TODO; we require the format only.
+    "TD003",
+    # We intentionally use broad `except Exception` in worker threads to keep
+    # the queue alive; bugbear B904/BLE001 would fight that intent.
+    "BLE001",
+    # Some Tk/UI methods have many params; not worth refactoring around.
+    "PLR0913",
+    # We deliberately use lazy imports inside functions for optional ML
+    # backends (mlx-whisper / parakeet-mlx) and to avoid pulling Tk into
+    # headless code paths.
+    "PLC0415",
+    # Worker-thread loops legitimately need try/except inside the loop so a
+    # transient error on one job doesn't take down the queue.
+    "PERF203",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "PLR0915",  # tests can be long
+    "PLR0912",  # tests can have many branches
+    "C901",     # tests can be complex
+    "PT011",    # tests can use broad pytest.raises
+]
+"src/auto_transcribe/ui_tk.py" = [
+    "PLR0915",  # Tk UI builders are naturally long
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+# Large-file / large-function detection lives here (PLR0915 max-statements,
+# max-lines is repo-level via the `--select PLR0915` rule above).
+max-statements = 60
+max-args = 7
+max-branches = 15
+max-returns = 6
+
+[tool.ruff.lint.isort]
+known-first-party = ["auto_transcribe"]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+# ---------------------------------------------------------------------------
+# Mypy: strict static type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/auto_transcribe"]
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+disallow_untyped_decorators = true
+no_implicit_reexport = true
+show_error_codes = true
+pretty = true
+
+[[tool.mypy.overrides]]
+# These third-party libs ship without type stubs.
+module = ["mlx_whisper", "mlx_whisper.*", "parakeet_mlx", "parakeet_mlx.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Vulture: dead-code detection (90% confidence floor; tweaked allowlist)
+# ---------------------------------------------------------------------------
+[tool.vulture]
+paths = ["src/auto_transcribe"]
+min_confidence = 80
+sort_by_size = true
+ignore_names = [
+    # Public API / dunder methods picked up by reflection
+    "__version__",
+    # Tk callback names
+    "_on_*",
+    "_drain_events",
+    # pytest fixtures and CLI argparse callbacks
+    "patch_engine",
+    "isolated_settings",
+    "scripted_engine",
+    "integration_fixtures",
+    "fixtures_dir",
+    "example_data_dir",
+    "reports_dir",
 ]

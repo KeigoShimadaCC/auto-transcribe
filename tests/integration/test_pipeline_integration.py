@@ -70,6 +70,7 @@ def test_audio_wav_through_full_pipeline(
     assert "00:00:00,400 --> 00:00:01,000" in srt
 
     import json
+
     data = json.loads(result.outputs["json"].read_text())
     assert data["language"] == "en"
     assert len(data["segments"]) == 2

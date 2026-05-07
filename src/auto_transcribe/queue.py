@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import queue
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Callable
 
 from auto_transcribe.config import Settings
 from auto_transcribe.pipeline import (
@@ -46,7 +47,7 @@ class JobQueue:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self._q: "queue.Queue[Job]" = queue.Queue()
+        self._q: queue.Queue[Job] = queue.Queue()
         self._jobs: dict[str, Job] = {}
         self._listeners: list[JobListener] = []
         self._lock = threading.Lock()
@@ -59,10 +60,8 @@ class JobQueue:
 
     def _emit(self, job: Job) -> None:
         for listener in list(self._listeners):
-            try:
+            with contextlib.suppress(Exception):
                 listener(job)
-            except Exception:  # noqa: BLE001
-                pass
 
     def submit(self, source: Path) -> Job | None:
         key = str(source.resolve())
@@ -89,7 +88,7 @@ class JobQueue:
 
     def stop(self, timeout: float = 5.0) -> None:
         self._stop.set()
-        self._q.put(_SENTINEL)  # type: ignore[arg-type]
+        self._q.put(_SENTINEL)
         if self._worker:
             self._worker.join(timeout=timeout)
 
@@ -141,12 +140,13 @@ class JobQueue:
             job.result = result
             job.progress = 1.0
             job.status = JobStatus.DONE
-            job.message = f"Wrote {result.outputs.get('txt', '?').name}"
+            txt_out = result.outputs.get("txt")
+            job.message = f"Wrote {txt_out.name if txt_out is not None else '?'}"
         except PipelineError as e:
             job.status = JobStatus.FAILED
             job.error = str(e)
             job.message = f"Failed: {e}"
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             job.status = JobStatus.FAILED
             job.error = repr(e)
             job.message = f"Failed: {e}"

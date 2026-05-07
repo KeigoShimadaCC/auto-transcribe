@@ -28,8 +28,33 @@ RUN_E2E=1 pytest -m e2e             # full sweep over ExampleData/
 - Type hints on all public functions; prefer `dataclass` over dicts for state.
 - Module/file: `snake_case.py`. Classes: `PascalCase`. Functions/vars: `snake_case`. Constants: `UPPER_SNAKE`.
 - Engines implement the `Transcriber` protocol in `engines/base.py`; route from `engines/factory.py`.
-- Imports sorted: stdlib, third-party, local (blank line between groups).
+- Imports sorted: stdlib, third-party, local (blank line between groups). Enforced by ruff `I` rules.
 - Self-documenting code; comments only for non-obvious constraints.
+
+### Static analysis toolchain
+
+All checks are configured in `pyproject.toml` and enforced both by `.pre-commit-config.yaml` and `.github/workflows/lint.yml`:
+
+| Tool | What it catches | Run locally |
+|---|---|---|
+| **ruff check** | E/W/F/I/B/UP/SIM/C90/PL/PERF/RUF/FIX/TD — pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify, mccabe complexity (`max-complexity = 12`), pylint refactor (incl. `max-statements=60` large-function gate), perf, ruff-specific, fixme, todos | `ruff check src tests` |
+| **ruff format** | Code formatting (line-length 100, double quotes) | `ruff format src tests` |
+| **mypy --strict** | Static type checking | `mypy` |
+| **vulture** | Dead code (functions, vars, classes never referenced; min confidence 80%) | `vulture` |
+| **jscpd** | Copy-paste duplication (5% threshold, 7-line / 50-token minimum) | `npx jscpd@4` (CI only) |
+| **pre-commit hooks** | Trailing whitespace, EOF newline, large files (>500 KB), private keys, conventional commit message format | `pre-commit run --all-files` |
+
+Install the hooks once after cloning:
+
+```bash
+pip install -e ".[dev]"
+pre-commit install --install-hooks
+pre-commit install --hook-type commit-msg   # Conventional Commit enforcement
+```
+
+### TODO / FIXME convention
+
+Ruff's `FIX` and `TD` rule sets enforce that any new `TODO`/`FIXME`/`XXX`/`HACK` marker uses the standard format `# TODO: <description>` or `# TODO(@author): <description>`. The CI lint workflow also writes a "Outstanding TODO/FIXME markers" table to the GitHub step summary on every run so debt is visible per PR.
 
 ## Testing Guidelines
 

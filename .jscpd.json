@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kucherenko/jscpd/master/packages/jscpd/schemas/jscpd.json",
+  "threshold": 5,
+  "minTokens": 50,
+  "minLines": 7,
+  "reporters": ["console", "markdown"],
+  "output": "./jscpd-report",
+  "ignore": [
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/tests/_reports/**",
+    "**/tests/_e2e_artifacts/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/*.egg-info/**",
+    "ExampleData/**",
+    "input/**",
+    "output/**"
+  ],
+  "format": ["python"],
+  "absolute": false,
+  "gitignore": true
+}

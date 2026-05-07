@@ -23,7 +23,7 @@ class TranscribeApp:
         self.queue.add_listener(self._on_job_event)
         self.watcher: FolderWatcher | None = None
 
-        self._event_q: "queue.Queue[Job]" = queue.Queue()
+        self._event_q: queue.Queue[Job] = queue.Queue()
         self._row_by_id: dict[str, str] = {}
 
         self.root = tk.Tk()
@@ -105,9 +105,7 @@ class TranscribeApp:
 
     def _start_watcher(self) -> None:
         if self.watcher is None:
-            self.watcher = FolderWatcher(
-                self.settings, on_new_file=lambda p: self.queue.submit(p)
-            )
+            self.watcher = FolderWatcher(self.settings, on_new_file=self.queue.submit)
         self.watcher.start()
         self.status_var.set(f"Watching {self.settings.input_dir}")
 

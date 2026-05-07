@@ -28,7 +28,7 @@ class _Engine:
 
 @pytest.fixture(autouse=True)
 def patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pipeline, "build_engine", lambda model: _Engine(model))
+    monkeypatch.setattr(pipeline, "build_engine", _Engine)
 
 
 def test_cli_once_writes_outputs_for_two_files(
@@ -48,11 +48,14 @@ def test_cli_once_writes_outputs_for_two_files(
     rc = cli.main(
         [
             "--once",
-            "--input", str(in_dir),
-            "--output", str(out_dir),
+            "--input",
+            str(in_dir),
+            "--output",
+            str(out_dir),
             "--save-srt",
             "--save-json",
-            "--model", "mlx-community/whisper-tiny",
+            "--model",
+            "mlx-community/whisper-tiny",
         ]
     )
     assert rc == 0
@@ -77,8 +80,10 @@ def test_cli_specific_files_argument(
 
     rc = cli.main(
         [
-            "--output", str(out_dir),
-            "--model", "mlx-community/whisper-tiny",
+            "--output",
+            str(out_dir),
+            "--model",
+            "mlx-community/whisper-tiny",
             str(target),
         ]
     )

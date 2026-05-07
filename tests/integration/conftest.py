@@ -28,9 +28,19 @@ def integration_fixtures(tmp_path_factory: pytest.TempPathFactory) -> Path:
     short_wav = d / "short.wav"
     subprocess.run(
         [
-            "ffmpeg", "-y", "-loglevel", "error",
-            "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
-            "-ac", "1", "-ar", "16000", str(short_wav),
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=1",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            str(short_wav),
         ],
         check=True,
     )
@@ -38,9 +48,19 @@ def integration_fixtures(tmp_path_factory: pytest.TempPathFactory) -> Path:
     long_wav = d / "long.wav"
     subprocess.run(
         [
-            "ffmpeg", "-y", "-loglevel", "error",
-            "-f", "lavfi", "-i", "sine=frequency=220:duration=3",
-            "-ac", "2", "-ar", "44100", str(long_wav),
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=220:duration=3",
+            "-ac",
+            "2",
+            "-ar",
+            "44100",
+            str(long_wav),
         ],
         check=True,
     )
@@ -48,11 +68,26 @@ def integration_fixtures(tmp_path_factory: pytest.TempPathFactory) -> Path:
     fake_video = d / "fake.mp4"
     subprocess.run(
         [
-            "ffmpeg", "-y", "-loglevel", "error",
-            "-f", "lavfi", "-i", "color=size=64x64:rate=10:duration=1",
-            "-f", "lavfi", "-i", "sine=frequency=880:duration=1",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-shortest", str(fake_video),
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=64x64:rate=10:duration=1",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=880:duration=1",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(fake_video),
         ],
         check=True,
     )

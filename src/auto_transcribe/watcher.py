@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
-from auto_transcribe.config import SUPPORTED_EXTS, Settings
+from auto_transcribe.config import Settings
 from auto_transcribe.pipeline import already_done, is_supported
 
 
@@ -20,7 +21,7 @@ class FolderWatcher:
     def __init__(
         self,
         settings: Settings,
-        on_new_file: Callable[[Path], None],
+        on_new_file: Callable[[Path], object],
         poll_interval: float = 1.0,
         stable_after: float = 2.0,
     ) -> None:
@@ -49,10 +50,8 @@ class FolderWatcher:
         in_dir = Path(self.settings.input_dir)
         in_dir.mkdir(parents=True, exist_ok=True)
         while not self._stop.is_set():
-            try:
+            with contextlib.suppress(Exception):
                 self._scan_once(in_dir)
-            except Exception:  # noqa: BLE001
-                pass
             self._stop.wait(self.poll_interval)
 
     def _scan_once(self, in_dir: Path) -> None:
@@ -76,7 +75,5 @@ class FolderWatcher:
                     self._dispatched.add(key)
                     continue
                 self._dispatched.add(key)
-                try:
+                with contextlib.suppress(Exception):
                     self.on_new_file(p)
-                except Exception:  # noqa: BLE001
-                    pass

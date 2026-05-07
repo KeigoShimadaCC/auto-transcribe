@@ -25,9 +25,7 @@ def _e2e_enabled() -> bool:
 
 
 @pytest.mark.skipif(not _e2e_enabled(), reason="set RUN_E2E=1 to run")
-def test_e2e_example_data(
-    example_data_dir: Path, tmp_path: Path, reports_dir: Path
-) -> None:
+def test_e2e_example_data(example_data_dir: Path, tmp_path: Path, reports_dir: Path) -> None:
     files = sorted([p for p in example_data_dir.iterdir() if is_supported(p)])
     assert files, "ExampleData/ has no supported media files"
 

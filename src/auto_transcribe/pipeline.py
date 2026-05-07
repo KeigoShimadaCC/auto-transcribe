@@ -5,10 +5,10 @@ import json
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
 from auto_transcribe.config import SUPPORTED_EXTS, Settings
 from auto_transcribe.engines import build_engine
@@ -77,9 +77,12 @@ def load_state(settings: Settings) -> dict[str, str]:
     if not p.exists():
         return {}
     try:
-        return json.loads(p.read_text())
+        raw = json.loads(p.read_text())
     except json.JSONDecodeError:
         return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(k): str(v) for k, v in raw.items()}
 
 
 def save_state(settings: Settings, state: dict[str, str]) -> None:
@@ -98,28 +101,26 @@ def mark_done(settings: Settings, src: Path) -> None:
 
 
 def _format_srt_timestamp(seconds: float) -> str:
-    if seconds < 0:
-        seconds = 0
+    seconds = max(seconds, 0)
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
     s = int(seconds % 60)
-    ms = int(round((seconds - int(seconds)) * 1000))
+    ms = round((seconds - int(seconds)) * 1000)
     if ms == 1000:
         s += 1
         ms = 0
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-def _write_outputs(
-    settings: Settings, src: Path, result: TranscriptionResult
-) -> dict[str, Path]:
+def _write_outputs(settings: Settings, src: Path, result: TranscriptionResult) -> dict[str, Path]:
     out_dir = Path(settings.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = src.stem
     written: dict[str, Path] = {}
 
     txt_path = out_dir / f"{stem}.txt"
-    txt_path.write_text(result.text + ("\n" if result.text and not result.text.endswith("\n") else ""))
+    needs_newline = bool(result.text) and not result.text.endswith("\n")
+    txt_path.write_text(result.text + ("\n" if needs_newline else ""))
     written["txt"] = txt_path
 
     if settings.save_srt and result.segments:
@@ -127,9 +128,7 @@ def _write_outputs(
         lines: list[str] = []
         for i, seg in enumerate(result.segments, start=1):
             lines.append(str(i))
-            lines.append(
-                f"{_format_srt_timestamp(seg.start)} --> {_format_srt_timestamp(seg.end)}"
-            )
+            lines.append(f"{_format_srt_timestamp(seg.start)} --> {_format_srt_timestamp(seg.end)}")
             lines.append(seg.text.strip())
             lines.append("")
         srt_path.write_text("\n".join(lines))
@@ -140,9 +139,7 @@ def _write_outputs(
         payload = {
             "text": result.text,
             "language": result.language,
-            "segments": [
-                {"start": s.start, "end": s.end, "text": s.text} for s in result.segments
-            ],
+            "segments": [{"start": s.start, "end": s.end, "text": s.text} for s in result.segments],
         }
         json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
         written["json"] = json_path
