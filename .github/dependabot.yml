@@ -1,0 +1,61 @@
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Update strategy:
+#   - Weekly cadence (Monday) keeps PR noise predictable.
+#   - 7-day cooldown gives upstream maintainers time to ship a follow-up patch
+#     before we adopt a release; majors get 14 days.
+#   - Production runtime deps land as individual PRs so each is reviewable.
+#   - Dev/test deps are grouped to keep the queue small.
+#   - GitHub Actions are versioned independently from Python packages.
+
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    labels:
+      - "type:chore"
+      - "area:deps"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps"
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    labels:
+      - "type:chore"
+      - "area:ci"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      ci-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "ci"
+      include: scope
