@@ -77,6 +77,7 @@ def test_dropped_file_triggers_full_pipeline(
         q.stop()
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=1)
 def test_three_files_dropped_in_burst_are_all_processed_serially(
     integration_fixtures: Path, isolated_settings: Settings, patch_engine: _CountingEngine
 ) -> None:

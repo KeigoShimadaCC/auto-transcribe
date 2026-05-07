@@ -12,7 +12,6 @@ license = { text = "MIT" }
 authors = [{ name = "Keigo Shimada" }]
 dependencies = [
     "mlx-whisper>=0.4.0",
-    "watchdog>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +27,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.10",
     "vulture>=2.11",
+    "deptry>=0.20",
     "pre-commit>=3.7",
 ]
 
@@ -224,4 +224,30 @@ ignore_names = [
     "fixtures_dir",
     "example_data_dir",
     "reports_dir",
+]
+
+# ---------------------------------------------------------------------------
+# Deptry: detects unused, missing, and transitively-used dependencies
+# ---------------------------------------------------------------------------
+[tool.deptry]
+extend_exclude = ["tests", "scripts", "docs"]
+known_first_party = ["auto_transcribe"]
+
+[tool.deptry.per_rule_ignores]
+# DEP002: dependency declared but not imported. The packages below ship CLI
+# entry points (or are pre-commit-hook executables) consumed by tooling, not
+# Python imports — flagging them as "unused" would be a false positive.
+DEP002 = [
+    "pytest",
+    "pytest-timeout",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-randomly",
+    "pytest-rerunfailures",
+    "coverage",
+    "ruff",
+    "mypy",
+    "vulture",
+    "deptry",
+    "pre-commit",
 ]

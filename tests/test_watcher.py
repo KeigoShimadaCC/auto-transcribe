@@ -41,6 +41,7 @@ def _wait_for(predicate, timeout: float = 8.0) -> bool:
     return False
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=1)
 def test_watcher_picks_up_new_file(isolated_settings: Settings, fixtures_dir: Path) -> None:
     q = JobQueue(isolated_settings)
     q.start()

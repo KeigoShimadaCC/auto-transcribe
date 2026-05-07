@@ -43,6 +43,7 @@ All checks are configured in `pyproject.toml` and enforced both by `.pre-commit-
 | **ruff format** | Code formatting (line-length 100, double quotes) | `ruff format src tests` |
 | **mypy --strict** | Static type checking | `mypy` |
 | **vulture** | Dead code (functions, vars, classes never referenced; min confidence 80%) | `vulture` |
+| **deptry** | Unused / missing / transitively-used dependencies in `pyproject.toml` | `deptry src` |
 | **jscpd** | Copy-paste duplication (5% threshold, 7-line / 50-token minimum) | `npx jscpd@4` (CI only) |
 | **pre-commit hooks** | Trailing whitespace, EOF newline, large files (>500 KB), private keys, conventional commit message format | `pre-commit run --all-files` |
 
