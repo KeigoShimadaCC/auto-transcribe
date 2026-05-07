@@ -1,0 +1,6 @@
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Default owner for everything in the repo. Add per-area owners below as the
+# project grows (e.g. `/src/auto_transcribe/engines/  @owner-a @owner-b`).
+
+* @KeigoShimadaCC

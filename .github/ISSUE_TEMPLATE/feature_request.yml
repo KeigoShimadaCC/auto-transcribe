@@ -1,0 +1,53 @@
+name: Feature request
+description: Propose a new capability or improvement.
+title: "feat: <short summary>"
+labels: ["type:feat"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. The clearer you describe the problem, the more
+        likely it gets prioritised.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user-facing problem does this solve? Who is affected?
+      placeholder: "Today I have to manually rename output files; I'd like ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Sketch the desired behaviour. Mention CLI flag names / UI affordances if applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about and why you set them aside.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:engine
+        - area:ui
+        - area:ci
+        - area:deps
+        - area:docs
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Links to related issues, screenshots, references.

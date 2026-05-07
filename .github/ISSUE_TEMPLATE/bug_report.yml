@@ -1,0 +1,81 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "fix: <short summary>"
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please fill out as much of the form as you can —
+        reproductions are the single biggest accelerator to a fix.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+      placeholder: When I drop a `.mp4` into `input/`, the watcher logs `Failed: ...` and never produces a transcript.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimum steps to make the bug appear.
+      placeholder: |
+        1. `python -m auto_transcribe --no-ui`
+        2. Drop `sample.mp4` (24 kHz mono) into `input/`
+        3. Observe stderr
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior (logs, stack traces)
+      description: Paste the full output / stack trace inside a code block.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS / hardware
+      placeholder: macOS 25.3 (M4 Pro, 64 GB)
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.4 (Homebrew)"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model in use
+      placeholder: "mlx-community/whisper-large-v3-turbo"
+
+  - type: input
+    id: ffmpeg
+    attributes:
+      label: ffmpeg version
+      placeholder: "ffmpeg version 8.1"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Settings file contents (with private paths redacted), screenshots, related issues.
