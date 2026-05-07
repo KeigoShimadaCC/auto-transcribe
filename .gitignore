@@ -1,0 +1,39 @@
+# Folder contents but keep folders themselves
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+
+# Test data — fully ignored
+ExampleData/
+
+# Models, caches, venvs
+models/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# State / reports / e2e artifacts
+.state.json
+.state/
+tests/_reports/
+tests/_e2e_artifacts/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-transcribe"
+version = "0.1.0"
+description = "Local audio/video transcription for Apple Silicon (MLX Whisper + Parakeet)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Keigo Shimada" }]
+dependencies = [
+    "mlx-whisper>=0.4.0",
+    "watchdog>=4.0.0",
+]
+
+[project.optional-dependencies]
+parakeet = ["parakeet-mlx>=0.3.0"]
+dev = [
+    "pytest>=8",
+    "pytest-timeout>=2.3",
+]
+
+[project.scripts]
+auto-transcribe = "auto_transcribe.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "e2e: end-to-end tests (slow; opt-in via RUN_E2E=1)",
+]
