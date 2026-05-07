@@ -300,6 +300,30 @@ Not in v1.
 
 ---
 
+## Releases
+
+Versioning and release notes are automated via
+[release-please](https://github.com/googleapis/release-please). Commits to `main`
+following [Conventional Commits](https://www.conventionalcommits.org/) drive a
+"release PR" that bumps the version (`pyproject.toml`,
+`src/auto_transcribe/__init__.py`) and prepends to `CHANGELOG.md`. Merging that
+PR cuts a tagged GitHub release.
+
+Section mapping (in `release-please-config.json`):
+
+| Commit type | Changelog section |
+|---|---|
+| `feat:` | Features |
+| `fix:` | Bug Fixes |
+| `perf:` | Performance Improvements |
+| `deps:` | Dependencies |
+| `docs:` | Documentation |
+| `refactor:` | Code Refactoring |
+| `revert:` | Reverts |
+| `test:` / `build:` / `ci:` / `chore:` | hidden from changelog |
+
+Breaking changes (`feat!:` or `BREAKING CHANGE:` footer) trigger a major bump.
+
 ## License
 
 MIT.

@@ -40,9 +40,17 @@ RUN_E2E=1 pytest -m e2e             # full sweep over ExampleData/
 
 ## Commit & Pull Request Guidelines
 
-- Commits: imperative subject ≤ 72 chars (e.g. `Add Parakeet engine adapter`); body explains *why* and lists user-visible changes.
+- **Conventional Commits required.** Format: `<type>(<scope>)?: <subject>` where `<type>` is one of `feat`, `fix`, `perf`, `deps`, `revert`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`. Examples: `feat(engine): add Parakeet adapter`, `fix(watcher): debounce by size-stable window`. Breaking changes append `!` to the type or include a `BREAKING CHANGE:` footer.
+- Subject ≤ 72 chars, imperative mood; body explains *why* and lists user-visible changes.
 - One logical change per commit. No build artifacts, models, or media files.
 - PRs: clear description, linked issue, before/after notes for UI tweaks, and `pytest` output. Update `README.md` / `QUICKSTART.md` when behavior or flags change.
+
+## Releases
+
+- Versioning is automated via [release-please](https://github.com/googleapis/release-please).
+- On every push to `main`, the `.github/workflows/release-please.yml` workflow opens or updates a "release PR" that bumps `pyproject.toml` / `src/auto_transcribe/__init__.py` and prepends to `CHANGELOG.md` based on Conventional Commits since the last tag.
+- Merging the release PR creates a tagged GitHub release. Manifest lives at `.release-please-manifest.json`; section mapping in `release-please-config.json`.
+- Do not edit `CHANGELOG.md` by hand for released versions; let release-please own it.
 
 ## Security & Configuration Tips
 
