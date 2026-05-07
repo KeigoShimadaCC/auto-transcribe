@@ -7,6 +7,9 @@ Get from "fresh clone" to "first transcript" in under five minutes.
 - Apple Silicon Mac (M1/M2/M3/M4)
 - Python 3.10+ (`python3 --version`)
 - `ffmpeg` (`brew install ffmpeg` if missing)
+- Tk for the GUI (Homebrew Python ships without it):
+  `brew install python-tk@3.14` (match your Python minor version).
+  If you skip this, the app still runs as a headless watcher.
 
 ## 2. Get the code
 

@@ -65,6 +65,9 @@ In May 2026 the best free local options for Apple Silicon are:
 - macOS 13+ on Apple Silicon (M1 / M2 / M3 / M4)
 - Python 3.10+ (3.11 / 3.12 / 3.13 / 3.14 all fine)
 - `ffmpeg` on `PATH` (already present if you have Homebrew: `brew install ffmpeg`)
+- Tk for the GUI window. Homebrew Python ships **without** Tk; install it once:
+  `brew install python-tk@3.14` (replace `3.14` with your Python version).
+  If Tk is missing, the app automatically falls back to headless watcher mode.
 - ~2 GB disk for the default model (cached under `~/.cache/huggingface/`)
 
 ---
@@ -271,6 +274,7 @@ The unit suite uses an in-memory fake engine plus the real ffmpeg binary, so it 
 ## Troubleshooting
 
 - **"ffmpeg not found on PATH"** — install via `brew install ffmpeg`.
+- **`ModuleNotFoundError: No module named '_tkinter'`** — Homebrew Python doesn't bundle Tk. Install it: `brew install python-tk@$(./.venv/bin/python -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")')`. The launcher script does this automatically on next run; the CLI also falls back to a headless watcher if Tk is unavailable.
 - **First run is slow** — that's the model download (~1.6 GB for `whisper-large-v3-turbo`). It's cached afterwards.
 - **Parakeet output is empty / weird** — Parakeet is English-only. Use a Whisper model for other languages.
 - **Watcher doesn't pick up a file** — files are debounced for 2 s of stable size to avoid grabbing partially copied data; if you're piping a still-growing file the watcher will wait until it stops growing.

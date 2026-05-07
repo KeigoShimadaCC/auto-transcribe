@@ -75,12 +75,28 @@ def _run_once(settings: Settings, files: list[Path] | None = None) -> int:
     return rc
 
 
+_TK_HINT = (
+    "Tk UI unavailable: this Python build is missing the `tkinter` module.\n"
+    "  - Homebrew Python: run `brew install python-tk@<your-version>`\n"
+    "    (e.g. `brew install python-tk@3.14`).\n"
+    "  - Or use the python.org installer / system Python which ships Tk.\n"
+    "Falling back to headless watcher. Use --no-ui to silence this message."
+)
+
+
 def _run_watch(settings: Settings, headless: bool) -> int:
     if not headless:
-        from auto_transcribe.ui_tk import run as run_ui
-
-        run_ui(settings)
-        return 0
+        try:
+            from auto_transcribe.ui_tk import run as run_ui
+        except ImportError as e:
+            if "tkinter" in str(e) or "_tkinter" in str(e):
+                print(_TK_HINT, file=sys.stderr)
+                headless = True
+            else:
+                raise
+        else:
+            run_ui(settings)
+            return 0
 
     from auto_transcribe.queue import JobQueue
     from auto_transcribe.watcher import FolderWatcher
