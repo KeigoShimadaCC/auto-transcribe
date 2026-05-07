@@ -55,6 +55,32 @@ pre-commit install --install-hooks
 pre-commit install --hook-type commit-msg   # Conventional Commit enforcement
 ```
 
+### Logging
+
+The package uses [loguru](https://github.com/Delgan/loguru) via a small
+wrapper at `src/auto_transcribe/logging.py`. Module code obtains a bound
+logger with:
+
+```python
+from auto_transcribe.logging import get_logger
+log = get_logger("queue")     # module-level
+log.info("dispatched {n} jobs", n=count)
+```
+
+- The stderr sink is colorised at INFO level and respects
+  `AUTO_TRANSCRIBE_LOG_LEVEL=DEBUG|WARNING|...` for verbose / quiet runs.
+- The CLI entry point opts into a rotating JSON file sink at
+  `~/.auto-transcribe/logs/auto-transcribe.log` (10 MB rotation, 7-day
+  retention). Override the directory with `AUTO_TRANSCRIBE_LOG_DIR=...`.
+- A `redact_paths` patcher scrubs the user's `$HOME` and any
+  `ExampleData/<basename>` from log messages so private filesystem paths
+  never leak into log files. Add new redaction rules by editing
+  `_redact_text` and writing a unit test in `tests/test_logging.py`.
+- Use loguru's brace-style placeholders (`log.info("got {x}", x=v)`)
+  rather than f-strings so log records keep structured fields for the
+  JSON sink.
+- Never log raw transcript contents; status-only.
+
 ### TODO / FIXME convention
 
 Ruff's `FIX` and `TD` rule sets enforce that any new `TODO`/`FIXME`/`XXX`/`HACK` marker uses the standard format `# TODO: <description>` or `# TODO(@author): <description>`. The CI lint workflow also writes a "Outstanding TODO/FIXME markers" table to the GitHub step summary on every run so debt is visible per PR.

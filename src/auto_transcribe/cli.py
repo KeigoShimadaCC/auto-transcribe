@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import argparse
-import sys
 import time
 from collections.abc import Callable
 from pathlib import Path
 
 from auto_transcribe.config import ALL_MODELS, Settings
+from auto_transcribe.logging import configure_logging, get_logger
 
 ProgressFn = Callable[[float, str], None]
+
+log = get_logger("cli")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -44,14 +46,14 @@ def _apply_overrides(settings: Settings, args: argparse.Namespace) -> Settings:
     return settings
 
 
-def _print_progress(prefix: str) -> ProgressFn:
+def _log_progress(prefix: str) -> ProgressFn:
     state: dict[str, int] = {"last": -1}
 
     def cb(fraction: float, status: str) -> None:
         pct = int(fraction * 100)
         if pct != state["last"]:
             state["last"] = pct
-            print(f"  [{pct:3d}%] {prefix}: {status}", flush=True)
+            log.info("[{pct:3d}%] {prefix}: {status}", pct=pct, prefix=prefix, status=status)
 
     return cb
 
@@ -61,20 +63,24 @@ def _run_once(settings: Settings, files: list[Path] | None = None) -> int:
 
     targets = files if files else iter_pending_inputs(settings)
     if not targets:
-        print("No pending files in", settings.input_dir)
+        log.info("No pending files in {dir}", dir=settings.input_dir)
         return 0
     rc = 0
     for src in targets:
-        print(f"-> {src.name}")
+        log.info("-> {name}", name=src.name)
         t0 = time.time()
         try:
-            result = transcribe_file(src, settings, on_progress=_print_progress(src.name))
+            result = transcribe_file(src, settings, on_progress=_log_progress(src.name))
         except Exception as e:
-            print(f"   FAILED: {e}", file=sys.stderr)
+            log.error("   FAILED: {err}", err=e)
             rc = 1
             continue
         elapsed = time.time() - t0
-        print(f"   wrote {result.outputs['txt']} ({elapsed:.1f}s)")
+        log.info(
+            "   wrote {path} ({elapsed:.1f}s)",
+            path=str(result.outputs["txt"]),
+            elapsed=elapsed,
+        )
     return rc
 
 
@@ -93,7 +99,7 @@ def _run_watch(settings: Settings, headless: bool) -> int:
             from auto_transcribe.ui_tk import run as run_ui
         except ImportError as e:
             if "tkinter" in str(e) or "_tkinter" in str(e):
-                print(_TK_HINT, file=sys.stderr)
+                log.warning("{hint}", hint=_TK_HINT)
                 headless = True
             else:
                 raise
@@ -105,14 +111,20 @@ def _run_watch(settings: Settings, headless: bool) -> int:
     from auto_transcribe.watcher import FolderWatcher
 
     def _log_job(j: Job) -> None:
-        print(f"[{j.status.value}] {j.source.name}: {int(j.progress * 100)}% {j.message}")
+        log.info(
+            "[{status}] {name}: {pct}% {msg}",
+            status=j.status.value,
+            name=j.source.name,
+            pct=int(j.progress * 100),
+            msg=j.message,
+        )
 
     q = JobQueue(settings)
     q.add_listener(_log_job)
     q.start()
     w = FolderWatcher(settings, on_new_file=q.submit)
     w.start()
-    print(f"Watching {settings.input_dir} ... Ctrl-C to stop.")
+    log.info("Watching {dir} ... Ctrl-C to stop.", dir=settings.input_dir)
     try:
         while True:
             time.sleep(1.0)
@@ -125,6 +137,7 @@ def _run_watch(settings: Settings, headless: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_logging(file_logging=True)
     args = _build_parser().parse_args(argv)
     settings = Settings.load()
     settings = _apply_overrides(settings, args)

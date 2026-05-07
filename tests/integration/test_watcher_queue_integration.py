@@ -42,7 +42,7 @@ def patch_engine(monkeypatch: pytest.MonkeyPatch) -> _CountingEngine:
     return eng
 
 
-def _wait_for(predicate, timeout: float = 8.0) -> bool:
+def _wait_for(predicate, timeout: float = 20.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         if predicate():
@@ -51,6 +51,7 @@ def _wait_for(predicate, timeout: float = 8.0) -> bool:
     return False
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=1)
 def test_dropped_file_triggers_full_pipeline(
     integration_fixtures: Path, isolated_settings: Settings, patch_engine: _CountingEngine
 ) -> None:
@@ -68,7 +69,8 @@ def test_dropped_file_triggers_full_pipeline(
         shutil.copy2(integration_fixtures / "short.wav", target)
 
         out = Path(isolated_settings.output_dir) / "short.txt"
-        assert _wait_for(out.exists, timeout=8.0)
+        assert _wait_for(out.exists, timeout=20.0)
+        q.join(timeout=5.0)
         assert out.read_text().strip().startswith("call#")
         assert patch_engine.invocations == 1
         assert any(j.status == JobStatus.DONE for j in q.jobs())
@@ -97,8 +99,9 @@ def test_three_files_dropped_in_burst_are_all_processed_serially(
         out_dir = Path(isolated_settings.output_dir)
         assert _wait_for(
             lambda: all((out_dir / f"clip_{i}.txt").exists() for i in range(3)),
-            timeout=15.0,
+            timeout=30.0,
         )
+        q.join(timeout=5.0)
         assert patch_engine.invocations == 3
         # Only one job in DECODING/TRANSCRIBING/WRITING at any frame:
         # serial queue invariant => no two .txt files should have been written

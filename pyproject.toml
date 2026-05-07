@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Keigo Shimada" }]
 dependencies = [
+    "loguru>=0.7.2",
     "mlx-whisper>=0.4.0",
 ]
 

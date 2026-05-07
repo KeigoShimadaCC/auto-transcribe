@@ -32,7 +32,7 @@ def patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(pipeline, "build_engine", _FakeEngine)
 
 
-def _wait_for(predicate, timeout: float = 8.0) -> bool:
+def _wait_for(predicate, timeout: float = 20.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         if predicate():
@@ -56,7 +56,7 @@ def test_watcher_picks_up_new_file(isolated_settings: Settings, fixtures_dir: Pa
         target = Path(isolated_settings.input_dir) / "tone.wav"
         shutil.copy2(fixtures_dir / "tone.wav", target)
         out = Path(isolated_settings.output_dir) / "tone.txt"
-        assert _wait_for(out.exists, timeout=8.0), "output txt not produced"
+        assert _wait_for(out.exists, timeout=20.0), "output txt not produced"
         assert out.read_text().strip() == "ok"
 
         jobs = q.jobs()

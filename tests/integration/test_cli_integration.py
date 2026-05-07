@@ -35,7 +35,6 @@ def test_cli_once_writes_outputs_for_two_files(
     tmp_path: Path,
     integration_fixtures: Path,
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setenv("AUTO_TRANSCRIBE_SETTINGS", str(tmp_path / "s.json"))
     in_dir = tmp_path / "input"
@@ -45,26 +44,34 @@ def test_cli_once_writes_outputs_for_two_files(
     shutil.copy2(integration_fixtures / "short.wav", in_dir / "a.wav")
     shutil.copy2(integration_fixtures / "long.wav", in_dir / "b.wav")
 
-    rc = cli.main(
-        [
-            "--once",
-            "--input",
-            str(in_dir),
-            "--output",
-            str(out_dir),
-            "--save-srt",
-            "--save-json",
-            "--model",
-            "mlx-community/whisper-tiny",
-        ]
-    )
+    log_lines: list[str] = []
+    from loguru import logger as _logger
+
+    sink_id = _logger.add(log_lines.append, level="INFO", format="{message}")
+    try:
+        rc = cli.main(
+            [
+                "--once",
+                "--input",
+                str(in_dir),
+                "--output",
+                str(out_dir),
+                "--save-srt",
+                "--save-json",
+                "--model",
+                "mlx-community/whisper-tiny",
+            ]
+        )
+    finally:
+        _logger.remove(sink_id)
+
     assert rc == 0
     for name in ("a", "b"):
         assert (out_dir / f"{name}.txt").read_text().strip() == "cli integration"
         assert (out_dir / f"{name}.srt").exists()
         assert (out_dir / f"{name}.json").exists()
-    captured = capsys.readouterr()
-    assert "a.wav" in captured.out and "b.wav" in captured.out
+    combined = "\n".join(log_lines)
+    assert "a.wav" in combined and "b.wav" in combined
 
 
 def test_cli_specific_files_argument(
